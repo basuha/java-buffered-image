@@ -28,7 +28,7 @@ public class ImgProcessing extends DetectImageTransparency{
             this.width = sourceImage.getWidth();
             this.height = sourceImage.getHeight();
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
 
@@ -47,11 +47,10 @@ public class ImgProcessing extends DetectImageTransparency{
     }
 
     char[][] getCharArray(Color[][] colorArray) {
-        Color[][] color = colorArray;
         char[][] array = new char[height][width];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                if (color[y][x].getBlue() < 150) { //оптимизировать
+                if (colorArray[y][x].getBlue() < 150) { //оптимизировать
                     array[y][x] = '#';
                 } else {
                     array[y][x] = ' ';
@@ -75,7 +74,7 @@ public class ImgProcessing extends DetectImageTransparency{
     void writeArray() {
         try {
 //            char[][] chars = getCharArray(getColorArray());
-            char[][] chars = getChunkedArray(getCharArray(getColorArray()), 8);
+            char[][] chars = getChunkedArray(getCharArray(getColorArray()), 10);
             BufferedWriter writer = new BufferedWriter(new FileWriter("output_4.txt"));
             for (char[] temp : chars) {
                 for (char temp2 : temp) {
@@ -87,7 +86,7 @@ public class ImgProcessing extends DetectImageTransparency{
             writer.flush();
             writer.close();
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
 
@@ -95,14 +94,14 @@ public class ImgProcessing extends DetectImageTransparency{
         int height = this.height / scale;
         int width = this.width / scale;
         char[][] chunkedArray = new char[height][width];
-        int yСount = 0;
-        int xСount = 0;
+        int yCount = 0;
+        int xCount = 0;
         for (int y = 0, i = height - 1; y < height; y++, i--) {
             for (int x = 0; x < width; x++) {
                 int blackCount = 0;
                 int whiteCount = 0;
-                for (int yy = yСount; yy < yСount + scale; yy++) {
-                    for (int xx = xСount; xx < xСount + scale; xx++) {
+                for (int yy = yCount; yy < yCount + scale; yy++) {
+                    for (int xx = xCount; xx < xCount + scale; xx++) {
                         if (array[yy][xx] == ' ') {
                             whiteCount++;
                         } else {
@@ -117,15 +116,15 @@ public class ImgProcessing extends DetectImageTransparency{
                 } else {
                     chunkedArray[x][y] = '_';
                 }
-                if (yСount < this.height - scale) {
-                    yСount += scale;
+                if (yCount < this.height - scale) {
+                    yCount += scale;
                 }
 
             }
-            if (xСount < this.width - scale) {
-                xСount += scale;
+            if (xCount < this.width - scale) {
+                xCount += scale;
             }
-            yСount = 0;
+            yCount = 0;
         }
         return chunkedArray;
     }
@@ -166,7 +165,7 @@ public class ImgProcessing extends DetectImageTransparency{
             File output = new File("peka.png");
             ImageIO.write(resultImage, "png", output);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
 
