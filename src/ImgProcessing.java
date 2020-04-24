@@ -75,7 +75,7 @@ public class ImgProcessing extends DetectImageTransparency{
     void writeArray() {
         try {
 //            char[][] chars = getCharArray(getColorArray());
-            char[][] chars = getChunkedArray(getCharArray(getColorArray()), 12);
+            char[][] chars = getChunkedArray(getCharArray(getColorArray()), 8);
             BufferedWriter writer = new BufferedWriter(new FileWriter("output_4.txt"));
             for (char[] temp : chars) {
                 for (char temp2 : temp) {
