@@ -5,28 +5,44 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class ImgProcessing extends DetectImageTransparency{
     private String fileName;
+
     private int width;
     private int height;
+    private int type;
+
     private int chunkSize;
+    private int scale = 1;
     private BufferedImage sourceImage;
     private BufferedImage resultImage;
-
+    private char[][] outputArray;
 
     ImgProcessing(String fileName) {
         this.fileName = fileName;
-        setFile();
+        initFile();
+        generateArray(getColorArray());
     }
 
-    void setFile() {
+    public int getScale() {
+        return scale;
+    }
+
+    public ImgProcessing setScale(int scale) {
+        this.scale = scale;
+        this.outputArray = getScaledArray(outputArray, scale);
+        return this;
+    }
+
+    void initFile() {
         try {
-            this.sourceImage = ImageIO.read(new File(fileName));
-            this.width = sourceImage.getWidth();
-            this.height = sourceImage.getHeight();
+            sourceImage = ImageIO.read(new File(fileName));
+            width = sourceImage.getWidth();
+            height = sourceImage.getHeight();
+            type = sourceImage.getType();
+
+            resultImage = new BufferedImage(width, height, type);
         } catch (IOException e) {
             System.out.println(e.toString());
         }
@@ -36,7 +52,7 @@ public class ImgProcessing extends DetectImageTransparency{
         this.chunkSize = chunkSize;
     }
 
-    Color[][] getColorArray() {
+    private Color[][] getColorArray() {
         Color[][] arrayColor = new Color[height][width];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -46,37 +62,34 @@ public class ImgProcessing extends DetectImageTransparency{
         return arrayColor;
     }
 
-    char[][] getCharArray(Color[][] colorArray) {
-        char[][] array = new char[height][width];
+    private void generateArray(Color[][] colorArray) {
+        outputArray = new char[height][width];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 if (colorArray[y][x].getBlue() < 150) { //оптимизировать
-                    array[y][x] = '#';
+                    outputArray[y][x] = '#';
                 } else {
-                    array[y][x] = ' ';
+                    outputArray[y][x] = ' ';
                 }
             }
         }
-        return array;
     }
 
-    void printArray() {
-        char[][] chars = getCharArray(getColorArray());
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                System.out.print(chars[y][x]);
+    public ImgProcessing printArray() {
+        for (int y = 0; y < height / scale; y++) {
+            for (int x = 0; x < width / scale; x++) {
+                System.out.print(outputArray[y][x]);
                 System.out.print(' ');
             }
             System.out.println();
         }
+        return this;
     }
 
-    void writeArray() {
+    public ImgProcessing saveToTxtFile(String fileName) {
         try {
-//            char[][] chars = getCharArray(getColorArray());
-            char[][] chars = getChunkedArray(getCharArray(getColorArray()), 10);
-            BufferedWriter writer = new BufferedWriter(new FileWriter("output_4.txt"));
-            for (char[] temp : chars) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+            for (char[] temp : outputArray) {
                 for (char temp2 : temp) {
                     writer.write(temp2);
                     writer.write(' ');
@@ -88,12 +101,13 @@ public class ImgProcessing extends DetectImageTransparency{
         } catch (IOException e) {
             System.out.println(e.toString());
         }
+        return this;
     }
 
-    char[][] getChunkedArray(char[][] array, int scale) {
+    private char[][] getScaledArray(char[][] array, int scale) {
         int height = this.height / scale;
         int width = this.width / scale;
-        char[][] chunkedArray = new char[height][width];
+        char[][] scaledArray = new char[height][width];
         int yCount = 0;
         int xCount = 0;
         for (int y = 0, i = height - 1; y < height; y++, i--) {
@@ -110,11 +124,11 @@ public class ImgProcessing extends DetectImageTransparency{
                     }
                 }
                 if (whiteCount > blackCount) {
-                    chunkedArray[x][y] = ' ';
+                    scaledArray[x][y] = ' ';
                 } else if (blackCount > whiteCount) {
-                    chunkedArray[x][y] = '#';
+                    scaledArray[x][y] = '#';
                 } else {
-                    chunkedArray[x][y] = '_';
+                    scaledArray[x][y] = '_';
                 }
                 if (yCount < this.height - scale) {
                     yCount += scale;
@@ -126,47 +140,59 @@ public class ImgProcessing extends DetectImageTransparency{
             }
             yCount = 0;
         }
-        return chunkedArray;
+        return scaledArray;
     }
 
-    void binarify() { //бинаризация картинки
-        try {
-            setFile();
-            this.resultImage = new BufferedImage(sourceImage.getWidth(), sourceImage.getHeight(), sourceImage.getType());
+    public ImgProcessing binarify() { //бинаризация картинки
+        for (int x = 0; x < sourceImage.getWidth(); x++) {
+            for (int y = 0; y < sourceImage.getHeight(); y++) {
 
-            for (int x = 0; x < sourceImage.getWidth(); x++) {
-                for (int y = 0; y < sourceImage.getHeight(); y++) {
+                Color color = new Color(sourceImage.getRGB(x, y));
 
-                    Color color = new Color(sourceImage.getRGB(x, y));
+                int blue = color.getBlue();
+                int red = color.getRed();
+                int green = color.getGreen();
 
-                    int blue = color.getBlue();
-                    int red = color.getRed();
-                    int green = color.getGreen();
+//            int grey = (int) (red * 0.21 + green * 0.72 + blue * 0.07) / 3; // светлота
+                int grey = (red + green + blue) / 3; // среднее
 
-//                int grey = (int) (red * 0.21 + green * 0.72 + blue * 0.07) / 3; // светлота
-                    int grey = (red + green + blue) / 3; // среднее
-
-                    // перевод в оттенки серого
+                // перевод в оттенки серого
 //
-//                    int newRed = grey;
-//                    int newGreen = grey;
-//                    int newBlue = grey;
+//                int newRed = grey;
+//                int newGreen = grey;
+//                int newBlue = grey;
 
-                    if (grey > (255 / 2) || isTransparent(x, y)) {
-                        Color newColor = new Color(255, 255, 255);
-                        resultImage.setRGB(x, y, newColor.getRGB());
-                    } else  {
-                        Color newColor = new Color(0, 0, 0);
-                        resultImage.setRGB(x, y, newColor.getRGB());
-                    }
+                if (grey > (255 / 2) || isTransparent(x, y)) {
+                    Color newColor = new Color(255, 255, 255);
+                    resultImage.setRGB(x, y, newColor.getRGB());
+                } else {
+                    Color newColor = new Color(0, 0, 0);
+                    resultImage.setRGB(x, y, newColor.getRGB());
                 }
             }
-            // Созраняем результат в новый файл
-            File output = new File("peka.png");
-            ImageIO.write(resultImage, "png", output);
-        } catch (IOException e) {
-            System.out.println(e.toString());
         }
+        return this;
+    }
+
+    public ImgProcessing saveToPngFile(String fileName) {
+        String format = fileName.substring(fileName.indexOf(".") + 1);
+        try {
+            ImageIO.write(resultImage, format, new File(fileName));
+        } catch (IOException e) {
+            System.out.println(e);
+        }
+        return this;
+    }
+
+    private boolean isBinary() {
+        for (int x = 0; x < sourceImage.getWidth(); x++) {
+            for (int y = 0; y < sourceImage.getHeight(); y++) {
+                if (sourceImage.getRGB(x,y) > 0
+                    && sourceImage.getRGB(x,y) < 255)
+                    return false;
+                }
+            }
+        return true;
     }
 
     public void checkTransparency(BufferedImage image){

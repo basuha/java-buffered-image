@@ -1,9 +1,3 @@
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 /**
@@ -17,13 +11,9 @@ public class Main {
 //        imgProcessing.printArray();
 //        imgProcessing.writeArray();
 
-        ImgProcessing imgProcessing1 = new ImgProcessing("peka_binary.png");
-//        imgProcessing1.binarify();
-        imgProcessing1.writeArray();
-
-
-
-
+        new ImgProcessing("arkadiy.jpg")
+                .binarify()
+                .saveToPngFile("w.jpg");
 
 
     }
