@@ -11,10 +11,9 @@ public class Main {
 //        imgProcessing.printArray();
 //        imgProcessing.writeArray();
 
-        new ImgProcessing("arkadiy.jpg")
-                .binarify()
-                .saveToPngFile("w.jpg");
-
+        new ImgProcessing("test.jpg")
+                .setScale(1)
+                .printArray();
 
     }
 }

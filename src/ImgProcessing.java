@@ -6,7 +6,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class ImgProcessing extends DetectImageTransparency{
+public class ImgProcessing {
     private String fileName;
 
     private int width;
@@ -18,11 +18,19 @@ public class ImgProcessing extends DetectImageTransparency{
     private BufferedImage sourceImage;
     private BufferedImage resultImage;
     private char[][] outputArray;
+    Color[][] colorArray;
 
     ImgProcessing(String fileName) {
         this.fileName = fileName;
         initFile();
-        generateArray(getColorArray());
+        generateColorArray();
+        generateSymbolArray();
+    }
+
+    public static class ASCIIArt extends ImgProcessing {
+        ASCIIArt(String fileName) {
+            super(fileName);
+        }
     }
 
     public int getScale() {
@@ -31,7 +39,7 @@ public class ImgProcessing extends DetectImageTransparency{
 
     public ImgProcessing setScale(int scale) {
         this.scale = scale;
-        this.outputArray = getScaledArray(outputArray, scale);
+        this.outputArray = getScaledArray();
         return this;
     }
 
@@ -52,17 +60,16 @@ public class ImgProcessing extends DetectImageTransparency{
         this.chunkSize = chunkSize;
     }
 
-    private Color[][] getColorArray() {
-        Color[][] arrayColor = new Color[height][width];
+    private void generateColorArray() {
+        colorArray = new Color[height][width];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                arrayColor[y][x] = new Color(sourceImage.getRGB(x, y));
+                colorArray[y][x] = new Color(sourceImage.getRGB(x, y));
             }
         }
-        return arrayColor;
     }
 
-    private void generateArray(Color[][] colorArray) {
+    private void generateSymbolArray() {
         outputArray = new char[height][width];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -104,7 +111,7 @@ public class ImgProcessing extends DetectImageTransparency{
         return this;
     }
 
-    private char[][] getScaledArray(char[][] array, int scale) {
+    private char[][] getScaledArray() {
         int height = this.height / scale;
         int width = this.width / scale;
         char[][] scaledArray = new char[height][width];
@@ -116,7 +123,7 @@ public class ImgProcessing extends DetectImageTransparency{
                 int whiteCount = 0;
                 for (int yy = yCount; yy < yCount + scale; yy++) {
                     for (int xx = xCount; xx < xCount + scale; xx++) {
-                        if (array[yy][xx] == ' ') {
+                        if (outputArray[yy][xx] == ' ') {
                             whiteCount++;
                         } else {
                             blackCount++;
@@ -125,10 +132,16 @@ public class ImgProcessing extends DetectImageTransparency{
                 }
                 if (whiteCount > blackCount) {
                     scaledArray[x][y] = ' ';
+                    System.out.print(' ');
+                    System.out.print(' ');
                 } else if (blackCount > whiteCount) {
                     scaledArray[x][y] = '#';
+                    System.out.print('#');
+                    System.out.print(' ');
                 } else {
                     scaledArray[x][y] = '_';
+                    System.out.print('*');
+                    System.out.print(' ');
                 }
                 if (yCount < this.height - scale) {
                     yCount += scale;
@@ -139,6 +152,7 @@ public class ImgProcessing extends DetectImageTransparency{
                 xCount += scale;
             }
             yCount = 0;
+            System.out.println();
         }
         return scaledArray;
     }
